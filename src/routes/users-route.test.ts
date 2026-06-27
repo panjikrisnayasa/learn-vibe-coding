@@ -93,4 +93,66 @@ describe("Users Routes Integration Tests", () => {
     const body = (await res.json()) as { error: string };
     expect(body.error).toBe("Unauthorized");
   });
+
+  it("should successfully log out a user and restrict access to GET /api/user", async () => {
+    // 1. Login to get token
+    const loginRes = await app.handle(
+      new Request("http://localhost/api/user/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: testEmail,
+          password: testPassword,
+        }),
+      })
+    );
+    expect(loginRes.status).toBe(200);
+    const loginData = (await loginRes.json()) as { data: string };
+    const token = loginData.data;
+
+    // 2. Perform Logout
+    const logoutRes = await app.handle(
+      new Request("http://localhost/api/user/logout", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+    );
+    expect(logoutRes.status).toBe(200);
+    const logoutData = (await logoutRes.json()) as { data: string };
+    expect(logoutData.data).toBe("OK");
+
+    // 3. Try to get user profile with the deleted token (should be 401)
+    const userRes = await app.handle(
+      new Request("http://localhost/api/user", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+    );
+    expect(userRes.status).toBe(401);
+  });
+
+  it("should return 401 Unauthorized for DELETE /api/user/logout with an invalid token", async () => {
+    const res = await app.handle(
+      new Request("http://localhost/api/user/logout", {
+        method: "DELETE",
+        headers: {
+          Authorization: "Bearer invalid-token-value",
+        },
+      })
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it("should return 401 Unauthorized for DELETE /api/user/logout with missing Authorization header", async () => {
+    const res = await app.handle(
+      new Request("http://localhost/api/user/logout", {
+        method: "DELETE",
+      })
+    );
+    expect(res.status).toBe(401);
+  });
 });

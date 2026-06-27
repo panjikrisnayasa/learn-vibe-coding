@@ -75,3 +75,21 @@ export async function getUserByToken(token: string) {
 
   return result[0]!;
 }
+
+export async function logoutUser(token: string) {
+  if (!token) {
+    throw new Error("Unauthorized");
+  }
+
+  const result = await db
+    .select()
+    .from(sessions)
+    .where(eq(sessions.token, token))
+    .limit(1);
+
+  if (result.length === 0) {
+    throw new Error("Unauthorized");
+  }
+
+  await db.delete(sessions).where(eq(sessions.token, token));
+}
