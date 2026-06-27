@@ -32,7 +32,7 @@ export async function loginUser({ email, password }: { email: string; password: 
     throw new Error("Email or password is wrong");
   }
 
-  const user = result[0];
+  const user = result[0]!
 
   // Verify password
   const isPasswordValid = await bcrypt.compare(password, user.password);
