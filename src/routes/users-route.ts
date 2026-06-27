@@ -67,9 +67,9 @@ export const usersRoute = new Elysia()
     } catch (error: any) {
       if (error.message === "Unauthorized") {
         set.status = 401;
-      } else {
-        set.status = 500;
+        return { error: "Unauthorized" };
       }
-      return { error: error.message };
+      set.status = 500;
+      return { error: "Internal server error" };
     }
   });
