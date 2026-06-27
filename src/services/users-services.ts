@@ -51,3 +51,27 @@ export async function loginUser({ email, password }: { email: string; password: 
 
   return token;
 }
+
+export async function getUserByToken(token: string) {
+  if (!token) {
+    throw new Error("Unauthorized");
+  }
+
+  const result = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      created_at: users.createdAt,
+    })
+    .from(sessions)
+    .innerJoin(users, eq(users.id, sessions.userId))
+    .where(eq(sessions.token, token))
+    .limit(1);
+
+  if (result.length === 0) {
+    throw new Error("Unauthorized");
+  }
+
+  return result[0]!;
+}

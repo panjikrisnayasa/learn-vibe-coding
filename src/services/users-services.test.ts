@@ -1,5 +1,5 @@
 import { describe, expect, it, afterAll } from "bun:test";
-import { registerUser, loginUser } from "./users-services";
+import { registerUser, loginUser, getUserByToken } from "./users-services";
 import { db } from "../db/db";
 import { users, sessions } from "../db/schema";
 import { eq } from "drizzle-orm";
@@ -71,5 +71,31 @@ describe("User Services", () => {
         password: testPassword,
       })
     ).rejects.toThrow("Email or password is wrong");
+  });
+
+  describe("getUserByToken", () => {
+    it("should successfully retrieve user by valid token", async () => {
+      const token = await loginUser({
+        email: testEmail,
+        password: testPassword,
+      });
+
+      expect(token).toBeDefined();
+
+      const user = await getUserByToken(token);
+      expect(user).toBeDefined();
+      expect(user.email).toBe(testEmail);
+      expect(user.name).toBe(testName);
+      expect(user.id).toBeDefined();
+      expect(user.created_at).toBeDefined();
+    });
+
+    it("should fail to retrieve user with invalid token", async () => {
+      expect(getUserByToken("invalid-token-123")).rejects.toThrow("Unauthorized");
+    });
+
+    it("should fail to retrieve user with empty token", async () => {
+      expect(getUserByToken("")).rejects.toThrow("Unauthorized");
+    });
   });
 });

@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import { registerUser, loginUser } from "../services/users-services";
+import { registerUser, loginUser, getUserByToken } from "../services/users-services";
 
 export const usersRoute = new Elysia()
   .post("/api/user", async ({ body, set }) => {
@@ -30,4 +30,25 @@ export const usersRoute = new Elysia()
       email: t.String({ format: "email" }),
       password: t.String(),
     })
+  })
+  .get("/api/user", async ({ headers, set }) => {
+    const authHeader = headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      set.status = 401;
+      return { error: "Unauthorized" };
+    }
+
+    const token = authHeader.substring(7); // "Bearer " is 7 chars long
+
+    try {
+      const user = await getUserByToken(token);
+      return { data: user };
+    } catch (error: any) {
+      if (error.message === "Unauthorized") {
+        set.status = 401;
+      } else {
+        set.status = 500;
+      }
+      return { error: error.message };
+    }
   });
