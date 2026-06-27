@@ -1,5 +1,5 @@
 import { describe, expect, it, afterAll } from "bun:test";
-import { registerUser, loginUser, getUserByToken } from "./users-services";
+import { registerUser, loginUser, getUserByToken, logoutUser } from "./users-services";
 import { db } from "../db/db";
 import { users, sessions } from "../db/schema";
 import { eq } from "drizzle-orm";
@@ -96,6 +96,31 @@ describe("User Services", () => {
 
     it("should fail to retrieve user with empty token", async () => {
       expect(getUserByToken("")).rejects.toThrow("Unauthorized");
+    });
+  });
+
+  describe("logoutUser", () => {
+    it("should successfully log out with a valid token", async () => {
+      const token = await loginUser({
+        email: testEmail,
+        password: testPassword,
+      });
+
+      expect(token).toBeDefined();
+
+      // Logout
+      await logoutUser(token);
+
+      // Verify the session is gone (calling getUserByToken should throw Unauthorized)
+      expect(getUserByToken(token)).rejects.toThrow("Unauthorized");
+    });
+
+    it("should fail to log out with an invalid token", async () => {
+      expect(logoutUser("invalid-token-123")).rejects.toThrow("Unauthorized");
+    });
+
+    it("should fail to log out with an empty token", async () => {
+      expect(logoutUser("")).rejects.toThrow("Unauthorized");
     });
   });
 });
